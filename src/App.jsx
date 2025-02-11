@@ -1,35 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Login from './pages/Auth/Login';
+import Signup from './pages/Auth/Signup';
+import FeedbackForm from './pages/Student/FeedbackForm';
+import FeedbackStatus from './pages/Student/FeedbackStatus';
+import ManagementDashboard from './pages/Management/Dashboard';
+import Reports from './pages/Management/Reports';
+import { useContext } from 'react';
+import AuthContext from './context/AuthContext';
 
-function App() {
-  const [count, setCount] = useState(0)
+const StudentDashboard = () => (
+  <div className="container mx-auto p-4">
+    <div className="grid md:grid-cols-2 gap-6">
+      <FeedbackForm />
+      <FeedbackStatus />
+    </div>
+  </div>
+);
+
+const App = () => {
+  const { user } = useContext(AuthContext);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <Navbar />
+      <Routes>
+        {/* Public Routes */}
+        <Route 
+         path="/login" 
+         element={!user ? <Login /> : <Navigate to={user.isAdmin ? "/management" : "/student"} replace />} 
+         />
+        <Route
+          path="/signup"
+          element={!user ? <Signup /> : <Navigate to={user.isAdmin ? "/management" : "/student"} />}
+        />
 
-export default App
+        {/* Student Routes */}
+        <Route
+          path="/student"
+          element={user && !user.isAdmin ? <StudentDashboard /> : <Navigate to="/login" />}
+        />
+
+        {/* Management Routes */}
+        <Route
+          path="/management"
+          element={user && user.isAdmin ? <ManagementDashboard /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/management/reports"
+          element={user && user.isAdmin ? <Reports /> : <Navigate to="/login" />}
+        />
+
+        {/* Default Redirect */}
+        <Route
+          path="/"
+          element={<Navigate to={user ? (user.isAdmin ? "/management" : "/student") : "/login"} />}
+        />
+      </Routes>
+    </Router>
+  );
+};
+
+export default App;
