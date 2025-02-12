@@ -1,64 +1,40 @@
+import axios from 'axios';
 import { createContext, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+
+export const AuthProvider = ({children}) => {
+
+  const [auth, setAuth] = useState({
+    user: null,
+    token: localStorage.getItem('authToken'),
+  });
+
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
-
-  const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const foundUser = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('user', JSON.stringify(foundUser));
-      toast.success('Login successful!');
-      return true;
+    const data = localStorage.getItem('authToken');
+    try{
+      if(data){
+        const parsedData = JSON.parse(data);
+        setAuth({
+          ...auth,
+          user: parsedData.user,
+          token: parsedData.token
+        });
+        axios.defaults.headers.common['Authorization'] = `Bearer ${parsedData.token}`;
+      }
     }
-    toast.error('Invalid credentials');
-    return false;
-  };
-
-  const signup = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      toast.error('User already exists!');
-      return false;
+    catch(err){
+      console.error(err);
+      toast.error('An error occurred. Please try again.');
+      localStorage.removeItem('authToken');
     }
-
-    // Auto-set admin if email is admin@example.com
-    const isAdmin = email.toLowerCase() === 'admin@example.com';
-
-    const newUser = {
-      id: Date.now(),
-      name,
-      email: email.toLowerCase(), // Normalize email
-      password,
-      isAdmin,
-    };
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    toast.success('Account created!');
-    return true;
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    toast.success('Logged out successfully!');
-  };
+},[]);
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ auth,setAuth }}>
       {children}
     </AuthContext.Provider>
   );

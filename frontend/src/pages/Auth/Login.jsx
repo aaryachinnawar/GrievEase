@@ -1,17 +1,53 @@
-import { useState, useContext } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
+const VITE_APP_API = import.meta.env.VITE_APP_API;
+import AuthContext from '../../context/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { auth, setAuth } = useContext(AuthContext);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    login(email, password); // Remove manual navigation
+    try {
+      const res = await axios.post(
+        `${VITE_APP_API}/api/auth/login`,
+        { email, password },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      console.log(res.data);
+
+      if (res.data.success) {
+        const { user, token } = res.data;
+        localStorage.setItem('authToken', JSON.stringify({ user, token }));
+        toast.success(res.data.message);
+
+        setAuth({
+          ...auth,
+          user, 
+          token,
+        });
+
+        if (user && user.role) {
+          if (user.role === 'admin') {
+            navigate('/management');
+          } else if (user.role === 'student') {
+            navigate('/student');
+          }
+        } else {
+          toast.error('User role not defined');
+        }
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Login failed. Please try again.');
+    }
   };
 
   return (

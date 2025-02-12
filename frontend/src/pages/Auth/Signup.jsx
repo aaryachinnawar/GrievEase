@@ -2,19 +2,35 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
+const VITE_APP_API = import.meta.env.VITE_APP_API;
 
 const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signup } = useContext(AuthContext);
+  const [role,setRole] = useState('student');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
-    if (signup(name, email, password)) {
-      toast.success('Account created successfully!');
-      navigate('/login');
+    try{
+      const res = await axios.post(`${VITE_APP_API}/api/auth/register`,
+        {name,email,password,role},
+        {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log(res.data);
+      if(res.data.success){
+        toast.success(res.data.message);
+        navigate('/login');
+      }else{
+        toast.error(res.data.message);
+      }
+    }catch(err){
+      console.log(err);
     }
   };
 

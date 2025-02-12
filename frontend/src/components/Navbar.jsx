@@ -4,11 +4,16 @@ import AuthContext from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext);
+  const {auth,setAuth} = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    setAuth({
+      ...auth,
+      user: null,
+      token: null,
+    });
+    localStorage.removeItem('authToken');
     navigate('/login');
     toast.success('Logged out successfully');
   };
@@ -16,13 +21,13 @@ const Navbar = () => {
   return (
     <nav className="bg-gray-800 text-white p-4">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-xl font-bold">Campus Feedback</Link>
+        <Link to="/" className="text-xl font-bold">GrievEase</Link>
         
         <div className="flex items-center space-x-4">
-          {user ? (
+          {auth.user ? (
             <>
-              <span>Welcome, {user.name}</span>
-              {user.isAdmin && (
+              <span>Welcome, {auth.user.name}</span>
+              {auth.user.role == 'admin' && (
                 <Link to="/management" className="hover:text-gray-300">
                   Management Dashboard
                 </Link>

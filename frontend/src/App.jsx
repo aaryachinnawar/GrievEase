@@ -8,6 +8,7 @@ import ManagementDashboard from './pages/Management/Dashboard';
 import Reports from './pages/Management/Reports';
 import { useContext } from 'react';
 import AuthContext from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute'; // Import the PrivateRoute component
 
 const StudentDashboard = () => (
   <div className="container mx-auto p-4">
@@ -19,42 +20,42 @@ const StudentDashboard = () => (
 );
 
 const App = () => {
-  const { user } = useContext(AuthContext);
+  const { auth } = useContext(AuthContext);
 
   return (
     <Router>
       <Navbar />
       <Routes>
         {/* Public Routes */}
-        <Route 
-         path="/login" 
-         element={!user ? <Login /> : <Navigate to={user.isAdmin ? "/management" : "/student"} replace />} 
-         />
+        <Route
+          path="/login"
+          element={!auth.user ? <Login /> : <Navigate to={auth.user.role === "admin" ? "/management" : "/student"} replace />}
+        />
         <Route
           path="/signup"
-          element={!user ? <Signup /> : <Navigate to={user.isAdmin ? "/management" : "/student"} />}
+          element={!auth.user ? <Signup /> : <Navigate to={auth.user.role === 'student' ? "/management" : "/student"} />}
         />
 
         {/* Student Routes */}
         <Route
           path="/student"
-          element={user && !user.isAdmin ? <StudentDashboard /> : <Navigate to="/login" />}
+          element={<PrivateRoute element={<StudentDashboard />} allowedRoles={['student']} />} // Only student can access
         />
 
         {/* Management Routes */}
         <Route
           path="/management"
-          element={user && user.isAdmin ? <ManagementDashboard /> : <Navigate to="/login" />}
+          element={<PrivateRoute element={<ManagementDashboard />} allowedRoles={['admin']} />} // Only admin can access
         />
         <Route
           path="/management/reports"
-          element={user && user.isAdmin ? <Reports /> : <Navigate to="/login" />}
+          element={<PrivateRoute element={<Reports />} allowedRoles={['admin']} />} // Only admin can access
         />
 
         {/* Default Redirect */}
         <Route
           path="/"
-          element={<Navigate to={user ? (user.isAdmin ? "/management" : "/student") : "/login"} />}
+          element={<Navigate to={auth.user ? (auth.user.role === 'admin' ? "/management" : "/student") : "/login"} />}
         />
       </Routes>
     </Router>
